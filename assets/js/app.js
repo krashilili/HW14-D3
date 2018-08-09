@@ -22,13 +22,13 @@ function makeResponsive() {
 
     // SVG wrapper dimensions are determined by the current width and
     // height of the browser window.
-    var svgWidth = window.innerWidth;
-    var svgHeight = window.innerHeight;
+    var svgWidth = window.innerWidth*.5;
+    var svgHeight = window.innerHeight*.9;
 
     var margin = {
         top: 50,
-        bottom: 50,
-        right: 50,
+        bottom: 100,
+        right: 40,
         left: 50
     };
 
@@ -53,6 +53,7 @@ function makeResponsive() {
 
     function errorHandle(error) {
         console.log("Failed to load the csv file!");
+        throw error;
     }
 
     function successHandle(medalData) {
@@ -64,24 +65,13 @@ function makeResponsive() {
 
         // create scales
         var xLinearScale = d3.scaleLinear()
-            .domain(d3.extent(medalData, d => d.poverty))
+            .domain([8, d3.max(medalData, d => d.poverty)])
             .range([0, width]);
 
         var yLinearScale = d3.scaleLinear()
-            .domain([0, d3.max(medalData, d => d.healthcare)])
+            .domain([4, d3.max(medalData, d => d.healthcare)])
             .range([height, 0]);
 
-        // create axes
-        var xAxis = d3.axisBottom(xLinearScale);
-        var yAxis = d3.axisLeft(yLinearScale);
-
-        // append axes
-        chartGroup.append("g")
-            .attr("transform", `translate(0, ${height})`)
-            .call(xAxis);
-
-        chartGroup.append("g")
-            .call(yAxis);
 
         // append circles
         var circlesGroup = chartGroup.selectAll("circle")
@@ -91,8 +81,50 @@ function makeResponsive() {
             .attr("cx", d => xLinearScale(d.poverty))
             .attr("cy", d => yLinearScale(d.healthcare))
             .attr("r", "10")
-            .attr("fill", "gold")
+            .attr("fill", "#9CCDE2")
             .attr("stroke-width", "1")
             .attr("stroke", "black");
+
+        // append texts
+        var textsGroup = chartGroup.selectAll('text')
+            .data(medalData)
+            .enter()
+            .append('text')
+            .text(function (d) {return d.abbr;})
+            .attr("x", function(d){ return xLinearScale(d.poverty)-3;})
+            .attr("y", function(d){ return yLinearScale(d.healthcare);})
+            .attr("font-family", "sans-serif")
+            .attr('font-size', '8px')
+            .attr('fill','white')
+            .attr('font-weight','bold');
+
+
+
+        // Create axes labels
+        chartGroup.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x", 0 - (height / 2))
+            .attr("dy", "1em")
+            .attr("class", "axisText")
+            .text("Lacks Healthcare (%)");
+
+        chartGroup.append("text")
+            .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
+            .attr("class", "axisText")
+            .text("In Poverty (%)");
+
+        // create axes
+        var xAxis = d3.axisBottom(xLinearScale).ticks(8);
+        var yAxis = d3.axisLeft(yLinearScale);
+
+        // append axes
+        chartGroup.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(xAxis);
+
+
+        chartGroup.append("g")
+            .call(yAxis);
     }
 }
